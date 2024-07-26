@@ -1,0 +1,1 @@
+- use tavily API to search the company up for useful context/info that could help towards tailoring the response. this will replace the company description by looking it up automatically for us. 
