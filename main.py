@@ -39,18 +39,25 @@ def parse_output(output):
 
 # Helper function to prepare the message content
 def prepare_message_content(resume, job_description, company_info):
-    return (
+    message = (
         "You are an expert ATS (Applicant Tracking System) resume analyst and career advisor. Your task is to help users tailor their resumes for specific job applications by analyzing their current resume against the job description and company information provided. You will then offer suggestions for improvement and provide a score out of 100 to indicate how well the resume matches the job requirements.\n\n"
         "First, carefully review the following information:\n\n"
         f"1. The user's current resume:\n<resume>\n{resume}\n</resume>\n\n"
-        f"2. The job description for the position they are applying for:\n<job_description>\n{job_description}\n</job_description>\n\n"
-        f"3. Background information on the company, including details about company culture:\n<company_info>\n{company_info}\n</company_info>\n\n"
+    )
+
+    if job_description:
+        message += f"2. The job description for the position they are applying for:\n<job_description>\n{job_description}\n</job_description>\n\n"
+    
+    if company_info:
+        message += f"3. Background information on the company, including details about company culture:\n<company_info>\n{company_info}\n</company_info>\n\n"
+
+    message += (
         "Now, follow these steps to analyze the resume and provide tailored advice:\n\n"
-        "1. Analyze the resume in relation to the job description:\n"
+        "1. Analyze the resume in relation to the job description (if provided):\n"
         "   - Identify key skills, experiences, and qualifications mentioned in the job description.\n"
         "   - Compare these to the content of the resume.\n"
         "   - Note any missing key elements or areas where the resume could be strengthened.\n\n"
-        "2. Consider the company culture and background:\n"
+        "2. Consider the company culture and background (if provided):\n"
         "   - Identify aspects of the company culture that might be relevant to highlight in the resume.\n"
         "   - Look for ways the applicant's experience or skills align with the company's values or mission.\n\n"
         "3. Provide specific suggestions for tailoring the resume:\n"
@@ -58,11 +65,12 @@ def prepare_message_content(resume, job_description, company_info):
         "   - Suggest ways to incorporate relevant keywords from the job description.\n"
         "   - Advise on how to highlight experiences that align with the company culture.\n\n"
         "4. Evaluate the overall strength of the resume:\n"
-        "   - Consider how well the resume matches the job requirements.\n"
+        "   - Consider how well the resume matches the job requirements (if provided).\n"
         "   - Assess the clarity, organization, and professionalism of the resume.\n"
-        "   - Take into account how well the resume reflects relevant aspects of the company culture.\n\n"
+        "   - Take into account how well the resume reflects relevant aspects of the company culture (if provided).\n\n"
         "5. Determine a score out of 100:\n"
-        "   - Base this score on how well the current resume matches the job and company requirements.\n"
+        "   - Base this score on how well the current resume matches the job and company requirements (if provided).\n"
+        "   - If job description or company info are not provided, base the score on general resume best practices.\n"
         "   - Consider both content and presentation in your scoring.\n\n"
         "Now, provide your analysis and recommendations in the following format:\n\n"
         "<analysis>\n[Provide a detailed analysis of the resume's strengths and weaknesses in relation to the job description and company culture.]\n</analysis>\n\n"
@@ -71,14 +79,22 @@ def prepare_message_content(resume, job_description, company_info):
         "<score>\n[Provide a score out of 100]\n</score>\n\n"
         "Remember to be constructive and specific in your feedback, providing actionable advice that will help the user improve their resume for this particular job application."
     )
+    return message
 
-# Updated function to generate the optimized resume, compare changes, and provide a new score
+# Function to generate the optimized resume and compare changes
 def optimize_and_compare_resume(resume, job_description, company_info, suggestions, provider):
     message_content = (
         "You are an expert resume optimizer. Using the feedback and suggestions provided, optimize the following resume:\n\n"
         f"Resume:\n{resume}\n\n"
-        f"Job Description:\n{job_description}\n\n"
-        f"Company Information:\n{company_info}\n\n"
+    )
+
+    if job_description:
+        message_content += f"Job Description:\n{job_description}\n\n"
+    
+    if company_info:
+        message_content += f"Company Information:\n{company_info}\n\n"
+
+    message_content += (
         f"Suggestions:\n{suggestions}\n\n"
         "Please provide an optimized version of the resume. After that, provide a detailed list of changes made, including additions, modifications, and removals. Finally, provide a new score out of 100 for the optimized resume. Format your response as follows:\n\n"
         "<optimized_resume>\n[Insert the optimized resume here]\n</optimized_resume>\n\n"
@@ -87,7 +103,7 @@ def optimize_and_compare_resume(resume, job_description, company_info, suggestio
         "- [Be specific about what was changed and why]\n"
         "</changes_made>\n\n"
         "<new_score>\n"
-        "[Provide a new score out of 100 for the optimized resume, considering how well it now matches the job description and company information]\n"
+        "[Provide a new score out of 100 for the optimized resume, considering how well it now matches the job description and company information (if provided)]\n"
         "</new_score>\n\n"
         "<score_justification>\n"
         "[Explain why you gave this new score, highlighting improvements and any remaining areas for potential enhancement]\n"
@@ -116,11 +132,19 @@ def optimize_and_compare_resume(resume, job_description, company_info, suggestio
     return optimized_resume, changes_made, new_score, new_score_justification
 
 # Streamlit app
-st.title("AI Resume Enhancer")
+st.title("Peter's AI Resume Enhancer")
 
-# Add provider selection
+# Sidebar
+st.sidebar.header("Settings")
+
+# LLM selection in sidebar
 provider_options = ["Anthropic", "Google Gemini"]
-selected_provider = st.selectbox("Select AI Provider", provider_options)
+selected_provider = st.sidebar.selectbox("Select AI Provider", provider_options)
+
+# Section visibility toggles
+show_resume = st.sidebar.checkbox("Show Resume Section", value=True)
+show_job_description = st.sidebar.checkbox("Show Job Description Section", value=True)
+show_company_info = st.sidebar.checkbox("Show Company Information Section", value=True)
 
 # Function to handle input for each section
 def get_input(section_name):
@@ -139,18 +163,18 @@ def get_input(section_name):
     return ""
 
 # Get input for each section
-resume = get_input("Resume")
-job_description = get_input("Job Description")
-company_info = get_input("Company Information")
+resume = get_input("Resume") if show_resume else ""
+job_description = get_input("Job Description") if show_job_description else ""
+company_info = get_input("Company Information") if show_company_info else ""
 
 # Store the parsed output in session state
 if 'parsed_output' not in st.session_state:
     st.session_state['parsed_output'] = None
 
-# Button to generate the report
-if st.button("Generate Report"):
-    if not (resume and job_description and company_info):
-        st.warning("Please provide all required information.")
+# Button to generate 
+if st.button("Generate"):
+    if not resume:
+        st.warning("Please provide at least the resume information.")
     else:
         # Prepare the message content
         message_content = prepare_message_content(resume, job_description, company_info)
