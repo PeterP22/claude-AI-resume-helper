@@ -1,1 +1,3 @@
-- use tavily API to search the company up for useful context/info that could help towards tailoring the response. this will replace the company description by looking it up automatically for us. 
+- use tavily API to search the company up for useful context/info that could help towards tailoring the response. 
+this will replace the company description by looking it up automatically for us based on keywords.
+we can then feed this as additional context and go from there. 
